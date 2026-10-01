@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Accéléromètre 3D : comment un smartphone sent la gravité</title>
+<style>
+/* Page autonome : aucune dépendance externe (pas de CDN), compatible Moodle en ressource Fichier / iframe */
+.a3, .a3 * { box-sizing: border-box; }
+html, body { margin: 0; background: #fff; }
+.a3 {
+  --a3-text: #1d2733; --a3-muted: #56626f; --a3-line: #d5dbe1; --a3-line2: #9aa6b2;
+  --a3-surface: #f4f6f8; --a3-accent: #0f6cbf; --a3-accent-bg: #e7f1fa; --a3-radius: 8px;
+  max-width: 880px; margin: 0 auto; padding: 20px 16px 32px;
+  font: 16px/1.6 "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--a3-text);
+}
+.a3 h1 { font-size: 1.75rem; line-height: 1.25; font-weight: 600; margin: 0 0 .6rem; }
+.a3 h2 { font-size: 1.25rem; line-height: 1.3; font-weight: 600; margin: 2rem 0 .6rem; }
+.a3 p { margin: 0 0 .8rem; max-width: 70ch; }
+.a3-lead { font-size: 1.05rem; color: var(--a3-muted); }
+.a3-btns { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
+.a3-btn {
+  font: inherit; font-size: .95rem; padding: .45rem .9rem; cursor: pointer;
+  border: 1px solid var(--a3-line2); border-radius: var(--a3-radius);
+  background: #fff; color: var(--a3-text);
+}
+.a3-btn:hover { background: var(--a3-surface); }
+.a3-btn:focus-visible { outline: 3px solid var(--a3-accent); outline-offset: 2px; }
+.a3-btn.is-active { background: var(--a3-accent-bg); border-color: var(--a3-accent); color: var(--a3-accent); font-weight: 600; }
+.a3-svg { display: block; width: 100%; height: auto; }
+.a3-ts { font-size: 12px; fill: var(--a3-muted); }
+.a3-th { font-size: 14px; font-weight: 600; fill: var(--a3-text); }
+.a3-arr { stroke: var(--a3-text); fill: none; }
+.a3-axis { stroke: var(--a3-line2); }
+.a3-grid { stroke: var(--a3-line2); stroke-dasharray: 4 4; }
+.a3-hatch { stroke: var(--a3-line2); stroke-width: 1; }
+.a3-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 8px 0 4px; }
+.a3-card { background: var(--a3-surface); border-radius: var(--a3-radius); padding: 12px 14px; }
+.a3-card-t { font-size: .85rem; color: var(--a3-muted); }
+.a3-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+.a3-card-v { font-size: 1.25rem; font-weight: 600; }
+.a3-card-s { font-size: .85rem; color: var(--a3-muted); }
+.a3-tablewrap { overflow-x: auto; }
+.a3 table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+.a3 th, .a3 td { border: 1px solid var(--a3-line); padding: .5rem .7rem; text-align: left; }
+.a3 thead th { background: var(--a3-surface); }
+.a3 td.n { font-variant-numeric: tabular-nums; }
+.a3-note { border-left: 4px solid var(--a3-accent); background: var(--a3-accent-bg); padding: .7rem 1rem; border-radius: 0 var(--a3-radius) var(--a3-radius) 0; }
+@media print { .a3-btns { display: none; } }
+</style>
+</head>
+<body>
+<main class="a3">
+ 
+  <h2>Le modèle avec la main</h2>
+  <p>Le pouce est l'axe X, l'index l'axe Y et le majeur l'axe Z, à 90° les uns des autres. Au bout de chaque doigt, un tube contient un ressort fixé au doigt et relié à un petit cylindre métallique. Choisissez une position du smartphone et observez les ressorts.</p>
+
+  <div class="a3-btns" id="btns">
+    <button class="a3-btn" data-p="up">Écran vers le haut</button>
+    <button class="a3-btn" data-p="down">Écran vers le bas</button>
+    <button class="a3-btn" data-p="land">Horizontal (paysage)</button>
+    <button class="a3-btn" data-p="port">Vertical (portrait)</button>
+  </div>
+
+  <svg class="a3-svg" viewBox="0 0 680 435" role="img" aria-labelledby="t1 d1">
+    <title id="t1">Accéléromètre 3D : ressorts dans trois tubes</title>
+    <desc id="d1">Le téléphone tourne, la gravité reste vers le bas, et chaque ressort se comprime ou s'allonge selon l'axe qui pointe vers le haut ou vers le bas.</desc>
+    <defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="#1d2733" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+    <line class="a3-axis" x1="20" y1="402" x2="660" y2="402" stroke-width="1.5"/>
+    <g id="hatch"></g>
+    <text class="a3-ts" x="650" y="426" text-anchor="end">Sol</text>
+    <text class="a3-th" x="70" y="104" text-anchor="middle">Gravité</text>
+    <line class="a3-arr" x1="70" y1="120" x2="70" y2="262" stroke-width="2.5" marker-end="url(#arrow)"/>
+    <text class="a3-ts" x="70" y="286" text-anchor="middle">g = 9,81 m/s²</text>
+    <g id="dyn"></g>
+  </svg>
+
+  <div class="a3-cards" aria-live="polite">
+    <div class="a3-card"><div class="a3-card-t"><span class="a3-dot" style="background:#378ADD"></span>Axe X · pouce</div><div class="a3-card-v" id="vx">0 m/s²</div><div class="a3-card-s" id="sx"></div></div>
+    <div class="a3-card"><div class="a3-card-t"><span class="a3-dot" style="background:#E24B4A"></span>Axe Y · index</div><div class="a3-card-v" id="vy">0 m/s²</div><div class="a3-card-s" id="sy"></div></div>
+    <div class="a3-card"><div class="a3-card-t"><span class="a3-dot" style="background:#639922"></span>Axe Z · majeur</div><div class="a3-card-v" id="vz">0 m/s²</div><div class="a3-card-s" id="sz"></div></div>
+  </div>
+
+  <h2>L'accélération de chaque axe</h2>
+  <p>L'axe soumis à la gravité passe à 9,81 m/s² (1g) quand il pointe vers le haut, et à −9,81 m/s² (−1g) quand il pointe vers le sol. Les deux autres axes restent à 0.</p>
+  <svg class="a3-svg" viewBox="0 0 680 262" role="img" aria-labelledby="t2 d2">
+    <title id="t2">Accélération des trois axes en fonction du temps</title>
+    <desc id="d2">Courbes x, y et z en m/s² sur les dix dernières secondes.</desc>
+    <defs><clipPath id="clipg"><rect x="92" y="20" width="568" height="200"/></clipPath></defs>
+    <text class="a3-th" x="92" y="14">Accélération (m/s²)</text>
+    <rect x="478" y="5" width="10" height="10" rx="2" fill="#378ADD"/><text class="a3-ts" x="493" y="10" dominant-baseline="central">x</text>
+    <rect x="528" y="5" width="10" height="10" rx="2" fill="#E24B4A"/><text class="a3-ts" x="543" y="10" dominant-baseline="central">y</text>
+    <rect x="578" y="5" width="10" height="10" rx="2" fill="#639922"/><text class="a3-ts" x="593" y="10" dominant-baseline="central">z</text>
+    <line class="a3-grid" x1="92" y1="38.25" x2="660" y2="38.25" stroke-width="1"/>
+    <line class="a3-axis" x1="92" y1="120" x2="660" y2="120" stroke-width="1"/>
+    <line class="a3-grid" x1="92" y1="201.75" x2="660" y2="201.75" stroke-width="1"/>
+    <line class="a3-axis" x1="92" y1="20" x2="92" y2="220" stroke-width="1"/>
+    <text class="a3-ts" x="84" y="38.25" text-anchor="end" dominant-baseline="central">9,81 (1g)</text>
+    <text class="a3-ts" x="84" y="120" text-anchor="end" dominant-baseline="central">0</text>
+    <text class="a3-ts" x="84" y="201.75" text-anchor="end" dominant-baseline="central">−9,81 (−1g)</text>
+    <g clip-path="url(#clipg)" fill="none" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+      <polyline id="gx" stroke="#378ADD" points=""/>
+      <polyline id="gy" stroke="#E24B4A" points=""/>
+      <polyline id="gz" stroke="#639922" points=""/>
+    </g>
+    <text class="a3-ts" x="376" y="248" text-anchor="middle">Temps : les 10 dernières secondes (instant présent à droite)</text>
+  </svg>
+
+  
+  <p class="a3-note" style="margin-top:16px">À retenir : un axe qui pointe vers le haut comprime son ressort (valeur positive), un axe qui pointe vers le bas l'étire (valeur négative). Pour une position inclinée, la gravité se répartit entre plusieurs axes, et la combinaison des trois valeurs donne l'orientation du téléphone.</p>
+</main>
+
+<script>
+(function(){
+var S=110,cx=340,cy=210,D2R=Math.PI/180,G=9.81;
+var cA=Math.cos(20*D2R),sA=Math.sin(20*D2R),cB=Math.cos(-30*D2R),sB=Math.sin(-30*D2R);
+var COL=['#378ADD','#E24B4A','#639922'],NAMES=['X · pouce','Y · index','Z · majeur'];
+var E=[[1,0,0],[0,1,0],[0,0,1]];
+var poses={up:[-90,0],down:[90,0],land:[0,-90],port:[0,0]};
+var cur=poses.up.slice(),anim=null,dirty=true,rr=[0,0,1];
+function Rx(t){var c=Math.cos(t),s=Math.sin(t);return [[1,0,0],[0,c,-s],[0,s,c]];}
+function Rz(t){var c=Math.cos(t),s=Math.sin(t);return [[c,-s,0],[s,c,0],[0,0,1]];}
+function mul(a,b){var r=[[0,0,0],[0,0,0],[0,0,0]];for(var i=0;i<3;i++)for(var j=0;j<3;j++)for(var k=0;k<3;k++)r[i][j]+=a[i][k]*b[k][j];return r;}
+function f(n){return n.toFixed(1);}
+function fr(n){return String(parseFloat(n.toFixed(2))).replace('.',',');}
+var hatch='';for(var x=24;x<660;x+=16){hatch+='<line class="a3-hatch" x1="'+x+'" y1="402" x2="'+(x-8)+'" y2="411"/>';}
+document.getElementById('hatch').innerHTML=hatch;
+function draw(ang){
+  var R=mul(Rx(ang[0]*D2R),Rz(ang[1]*D2R));
+  function P(p){
+    var w0=R[0][0]*p[0]+R[0][1]*p[1]+R[0][2]*p[2];
+    var w1=R[1][0]*p[0]+R[1][1]*p[1]+R[1][2]*p[2];
+    var w2=R[2][0]*p[0]+R[2][1]*p[1]+R[2][2]*p[2];
+    var x1=w0*cB+w2*sB,z1=-w0*sB+w2*cB;
+    var y2=w1*cA-z1*sA,z2=w1*sA+z1*cA;
+    return {x:cx+S*x1,y:cy-S*y2,z:z2};
+  }
+  function ax(i,s){return P([E[i][0]*s,E[i][1]*s,E[i][2]*s]);}
+  var items=[];
+  var hx=.24,hy=.46,hz=.03;
+  var V=[];
+  for(var a=-1;a<=1;a+=2)for(var b=-1;b<=1;b+=2)for(var c=-1;c<=1;c+=2)V.push(P([a*hx,b*hy,c*hz]));
+  function vi(a,b,c){return ((a+1)/2)*4+((b+1)/2)*2+((c+1)/2);}
+  var faces=[
+    {v:[vi(-1,-1,1),vi(1,-1,1),vi(1,1,1),vi(-1,1,1)],fill:'#2B2F33'},
+    {v:[vi(-1,-1,-1),vi(1,-1,-1),vi(1,1,-1),vi(-1,1,-1)],fill:'#C9CDD1'},
+    {v:[vi(1,-1,-1),vi(1,1,-1),vi(1,1,1),vi(1,-1,1)],fill:'#8E959B'},
+    {v:[vi(-1,-1,-1),vi(-1,1,-1),vi(-1,1,1),vi(-1,-1,1)],fill:'#8E959B'},
+    {v:[vi(-1,1,-1),vi(1,1,-1),vi(1,1,1),vi(-1,1,1)],fill:'#8E959B'},
+    {v:[vi(-1,-1,-1),vi(1,-1,-1),vi(1,-1,1),vi(-1,-1,1)],fill:'#8E959B'}
+  ];
+  faces.forEach(function(fc,idx){
+    var d=0,pts='';
+    fc.v.forEach(function(k){d+=V[k].z/4;pts+=f(V[k].x)+','+f(V[k].y)+' ';});
+    items.push({d:d,s:'<polygon points="'+pts+'" fill="'+fc.fill+'" fill-opacity=".82" stroke="#1E2124" stroke-width=".8" stroke-linejoin="round"/>'});
+    if(idx===0){
+      var s1=P([-.07,.41,.031]),s2=P([.07,.41,.031]);
+      items.push({d:d+.001,s:'<line x1="'+f(s1.x)+'" y1="'+f(s1.y)+'" x2="'+f(s2.x)+'" y2="'+f(s2.y)+'" stroke="#8B939A" stroke-width="2" stroke-linecap="round"/>'});
+    }
+    if(idx===1){
+      var cm=P([-.14,.37,-.031]);
+      items.push({d:d+.001,s:'<circle cx="'+f(cm.x)+'" cy="'+f(cm.y)+'" r="4" fill="#6B7379"/>'});
+    }
+  });
+  var o=P([0,0,0]);
+  items.push({d:-9,s:'<circle cx="'+f(o.x)+'" cy="'+f(o.y)+'" r="22" fill="#F0C4A4" stroke="#B57A57" stroke-width="2"/>'});
+  var s0=.78,Lt=.70,L0=.40,K=.16,MM=.11,r=[R[1][0],R[1][1],R[1][2]];
+  rr=r;
+  for(var i=0;i<3;i++){
+    var A=ax(i,0),B=ax(i,s0);
+    items.push({d:(A.z+B.z)/2,s:'<line x1="'+f(A.x)+'" y1="'+f(A.y)+'" x2="'+f(B.x)+'" y2="'+f(B.y)+'" stroke="#B57A57" stroke-width="19" stroke-linecap="round"/><line x1="'+f(A.x)+'" y1="'+f(A.y)+'" x2="'+f(B.x)+'" y2="'+f(B.y)+'" stroke="#F0C4A4" stroke-width="15" stroke-linecap="round"/>'});
+    var len=L0-K*r[i];
+    var T0=ax(i,s0),T1=ax(i,s0+Lt),Q1=ax(i,s0+len),Q2=ax(i,s0+len+MM);
+    var dx=T1.x-T0.x,dy=T1.y-T0.y,dl=Math.sqrt(dx*dx+dy*dy);
+    if(dl<1){dx=1;dy=0;dl=1;}
+    dx/=dl;dy/=dl;
+    var nx=-dy,ny=dx,col=COL[i],h=14,g='';
+    g+='<line x1="'+f(T0.x)+'" y1="'+f(T0.y)+'" x2="'+f(T1.x)+'" y2="'+f(T1.y)+'" stroke="'+col+'" stroke-opacity=".14" stroke-width="'+(2*h)+'"/>';
+    var N=8,pts='';
+    for(var j=0;j<=2*N;j++){
+      var t=j/(2*N),off=(j===0||j===2*N)?0:((j%2)?8:-8);
+      pts+=f(T0.x+(Q1.x-T0.x)*t+nx*off)+','+f(T0.y+(Q1.y-T0.y)*t+ny*off)+' ';
+    }
+    g+='<polyline points="'+pts+'" fill="none" stroke="#C0782F" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>';
+    g+='<line x1="'+f(Q1.x)+'" y1="'+f(Q1.y)+'" x2="'+f(Q2.x)+'" y2="'+f(Q2.y)+'" stroke="#4A5055" stroke-width="22"/>';
+    g+='<line x1="'+f(Q1.x)+'" y1="'+f(Q1.y)+'" x2="'+f(Q2.x)+'" y2="'+f(Q2.y)+'" stroke="#A9B1B8" stroke-width="18"/>';
+    g+='<line x1="'+f(Q1.x-nx*5)+'" y1="'+f(Q1.y-ny*5)+'" x2="'+f(Q2.x-nx*5)+'" y2="'+f(Q2.y-ny*5)+'" stroke="#F1F3F5" stroke-opacity=".7" stroke-width="4"/>';
+    [1,-1].forEach(function(sg){
+      g+='<line x1="'+f(T0.x+nx*h*sg)+'" y1="'+f(T0.y+ny*h*sg)+'" x2="'+f(T1.x+nx*h*sg)+'" y2="'+f(T1.y+ny*h*sg)+'" stroke="'+col+'" stroke-opacity=".85" stroke-width="1.4"/>';
+    });
+    [T0,T1].forEach(function(T){
+      g+='<line x1="'+f(T.x-nx*h)+'" y1="'+f(T.y-ny*h)+'" x2="'+f(T.x+nx*h)+'" y2="'+f(T.y+ny*h)+'" stroke="'+col+'" stroke-opacity=".85" stroke-width="1.6"/>';
+    });
+    items.push({d:(T0.z+T1.z)/2,s:g});
+  }
+  items.sort(function(a,b){return a.d-b.d;});
+  var out='';
+  items.forEach(function(it){out+=it.s;});
+  for(var k=0;k<3;k++){
+    var L=ax(k,s0+Lt+.24);
+    out+='<text class="a3-th" x="'+f(L.x)+'" y="'+f(L.y)+'" text-anchor="middle" dominant-baseline="central" style="fill:'+COL[k]+'">'+NAMES[k]+'</text>';
+  }
+  document.getElementById('dyn').innerHTML=out;
+  ['x','y','z'].forEach(function(n,k){
+    var v=Math.abs(r[k])<.005?0:r[k];
+    var sgn=v>0?'+':(v<0?'\u2212':'');
+    document.getElementById('v'+n).textContent=sgn+fr(Math.abs(v)*G)+' m/s\u00b2';
+    var st=v>.05?'Ressort comprim\u00e9':(v<-.05?'Ressort allong\u00e9':'Ressort au repos');
+    document.getElementById('s'+n).textContent='('+(v<0?'\u2212':'')+fr(Math.abs(v))+'g) \u00b7 '+st;
+  });
+}
+var X0=92,W=568,WIN=10,samples=[],lastS=0;
+var gl=[document.getElementById('gx'),document.getElementById('gy'),document.getElementById('gz')];
+function yOf(v){return 20+(12-v)/24*200;}
+function vals(){return [rr[0]*G,rr[1]*G,rr[2]*G];}
+function drawGraph(t){
+  var start=t-WIN,strs=['','',''];
+  var all=samples.concat([{t:t,v:vals()}]);
+  for(var i=0;i<all.length;i++){
+    var s=all[i],x=X0+(s.t-start)/WIN*W;
+    for(var k=0;k<3;k++)strs[k]+=f(x)+','+f(yOf(s.v[k]))+' ';
+  }
+  for(var k=0;k<3;k++)gl[k].setAttribute('points',strs[k]);
+}
+var reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function setActive(name){
+  document.querySelectorAll('#btns button').forEach(function(b){
+    b.classList.toggle('is-active',b.getAttribute('data-p')===name);
+  });
+}
+function go(name){
+  var t=poses[name];
+  setActive(name);
+  if(reduced){cur=t.slice();dirty=true;anim=null;return;}
+  anim={from:cur.slice(),to:t,t0:performance.now()};
+}
+function loop(now){
+  var t=now/1000;
+  if(anim){
+    var u=Math.min(1,(now-anim.t0)/900),e=u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2;
+    cur=[anim.from[0]+(anim.to[0]-anim.from[0])*e,anim.from[1]+(anim.to[1]-anim.from[1])*e];
+    if(u>=1)anim=null;
+    dirty=true;
+  }
+  if(dirty){draw(cur);dirty=false;}
+  if(!samples.length){samples.push({t:t-WIN-1,v:vals()});lastS=now;}
+  if(now-lastS>30){
+    samples.push({t:t,v:vals()});lastS=now;
+    while(samples.length>2&&samples[1].t<t-WIN-1)samples.shift();
+  }
+  drawGraph(t);
+  requestAnimationFrame(loop);
+}
+document.querySelectorAll('#btns button').forEach(function(b){
+  b.addEventListener('click',function(){go(b.getAttribute('data-p'));});
+});
+setActive('up');
+draw(cur);
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
